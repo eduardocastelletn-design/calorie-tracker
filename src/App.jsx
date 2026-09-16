@@ -136,6 +136,7 @@ const fromKg = (kg, unit) => (unit === "lb" ? kg * LB_PER_KG : kg);
 --------------------------------------------------------------- */
 
 const CSS = `
+  *, *::before, *::after { box-sizing: border-box; }
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&display=swap');
   :root{
     --cream:#0B3B2C;
@@ -244,7 +245,7 @@ const CSS = `
   .ct-btn:disabled{ opacity:0.55; cursor:default; }
   .ct-input{
     width:100%; padding:12px 14px; border-radius:12px; border:1.5px solid var(--track);
-    background:rgba(255,255,255,0.07); font-size:14px; margin-bottom:12px; box-sizing:border-box; color:var(--ink);
+    background:rgba(255,255,255,0.07); font-size:16px; margin-bottom:12px; box-sizing:border-box; color:var(--ink);
   }
   .ct-input::placeholder{ color:rgba(255,255,255,0.4); }
   .ct-input:focus{ outline:none; border-color:var(--sage); }
@@ -433,17 +434,17 @@ function WeightView({ weightLog, unit, onChangeUnit, onAdd, onRemove }) {
       <div className="ct-card">
         <div className="ct-label">Log a weight entry</div>
         <input className="ct-input" type="date" value={date} max={todayStr()} onChange={(e) => setDate(e.target.value)} />
-        <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 12, width: "100%", boxSizing: "border-box" }}>
           <input
             className="ct-input"
-            style={{ flex: 1, minWidth: 0, margin: 0 }}
+            style={{ flex: "1 1 140px", minWidth: 0, margin: 0 }}
             type="number"
             step="0.1"
             placeholder={unit === "kg" ? "e.g. 78.5" : "e.g. 173.0"}
             value={value}
             onChange={(e) => setValue(e.target.value)}
           />
-          <div className="ct-unit-toggle">
+          <div className="ct-unit-toggle" style={{ flexShrink: 0 }}>
             <button type="button" className={unit === "kg" ? "active" : ""} onClick={() => onChangeUnit("kg")}>kg</button>
             <button type="button" className={unit === "lb" ? "active" : ""} onClick={() => onChangeUnit("lb")}>lb</button>
           </div>
@@ -792,13 +793,13 @@ function IngredientRow({ item, onNameChange, onCaloriesChange, onDelete, onRecal
   const focusValueRef = useRef(item.name);
   return (
     <div className="ct-item" style={{ alignItems: item.grams != null ? "flex-start" : "center" }}>
-      <div className="icon" style={{ background: "#FCE9DE", marginTop: item.grams != null ? 2 : 0 }}>
+      <div className="icon" style={{ background: "#FCE9DE", marginTop: item.grams != null ? 2 : 0, flexShrink: 0 }}>
         <UtensilsCrossed size={16} color="var(--coral-dark)" />
       </div>
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <input
           className="ct-input"
-          style={{ margin: 0, width: "100%", padding: "8px 10px" }}
+          style={{ margin: 0, width: "100%", padding: "8px 10px", boxSizing: "border-box" }}
           value={item.name}
           onChange={(e) => onNameChange(e.target.value)}
           onFocus={() => { focusValueRef.current = item.name; }}
@@ -815,17 +816,17 @@ function IngredientRow({ item, onNameChange, onCaloriesChange, onDelete, onRecal
           </div>
         )}
       </div>
-      <button onClick={onRecalc} disabled={recalcing} title="Recalculate calories for this item">
+      <button onClick={onRecalc} disabled={recalcing} title="Recalculate calories for this item" style={{ flexShrink: 0 }}>
         {recalcing ? <Loader2 className="ct-spin" size={15} /> : <Sparkles size={15} />}
       </button>
       <input
         className="ct-input ct-mono"
         type="number"
-        style={{ margin: 0, width: 64, padding: "8px 8px", textAlign: "right" }}
+        style={{ margin: 0, width: 64, padding: "8px 8px", textAlign: "right", flexShrink: 0, boxSizing: "border-box" }}
         value={item.calories}
         onChange={(e) => onCaloriesChange(Number(e.target.value) || 0)}
       />
-      <button onClick={onDelete}><Trash2 size={15} /></button>
+      <button onClick={onDelete} style={{ flexShrink: 0 }}><Trash2 size={15} /></button>
     </div>
   );
 }
@@ -1068,7 +1069,13 @@ function ManualFoodSheet({ onClose, onAdd }) {
     try {
       const text = await askClaude(
         `Food description: "${name}"`,
-        `You are a careful nutrition-estimation assistant. Given a short text description of a food or meal (which may include quantities and multiple items), break it down into individual ingredients/items and estimate calories for each, using typical portion sizes when quantities aren't given. Respond ONLY with strict JSON, no markdown fences, no commentary, in exactly this shape: {"items":[{"name":string,"calories":number}],"protein_g":number,"carbs_g":number,"fat_g":number}. Always give your best estimate even if the description is vague, and always include at least one item.`
+        `You are a rigorous nutrition-estimation assistant. Given a short text description of a food or meal, break it down into individual components (proteins, starches, vegetables, sauces/dressings, oils/fats, garnishes) the way a careful nutritionist would, using typical restaurant/home-cooked portions when quantities aren't given.
+
+Assume cooking oil, butter, dressing, or sauce is present for any component that would normally involve it (sautéed, fried, roasted, dressed, pan-seared, etc.) UNLESS the description explicitly says otherwise (e.g. "dry," "plain," "no oil," "steamed"). Include that as its own line item rather than folding it invisibly into the main component.
+
+For each component and the overall total, form a plausible low-to-high calorie range and report a figure in the upper third of that range rather than the midpoint — underestimating is the costlier mistake for someone tracking calories for fat loss.
+
+Respond ONLY with strict JSON, no markdown fences, no commentary, in exactly this shape: {"items":[{"name":string,"calories":number,"hidden":boolean}],"protein_g":number,"carbs_g":number,"fat_g":number}. Set "hidden":true for a component you assumed rather than the person explicitly mentioning (e.g. added cooking oil). Always give your best estimate even if the description is vague, and always include at least one item.`
       );
       const parsed = parseJSON(text);
       if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
