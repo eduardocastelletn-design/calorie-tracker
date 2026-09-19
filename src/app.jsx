@@ -434,17 +434,16 @@ function WeightView({ weightLog, unit, onChangeUnit, onAdd, onRemove }) {
       <div className="ct-card">
         <div className="ct-label">Log a weight entry</div>
         <input className="ct-input" type="date" value={date} max={todayStr()} onChange={(e) => setDate(e.target.value)} />
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 12, width: "100%", boxSizing: "border-box" }}>
-          <input
-            className="ct-input"
-            style={{ flex: "1 1 140px", minWidth: 0, margin: 0 }}
-            type="number"
-            step="0.1"
-            placeholder={unit === "kg" ? "e.g. 78.5" : "e.g. 173.0"}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-          />
-          <div className="ct-unit-toggle" style={{ flexShrink: 0 }}>
+        <input
+          className="ct-input"
+          type="number"
+          step="0.1"
+          placeholder={unit === "kg" ? "e.g. 78.5" : "e.g. 173.0"}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+        />
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+          <div className="ct-unit-toggle">
             <button type="button" className={unit === "kg" ? "active" : ""} onClick={() => onChangeUnit("kg")}>kg</button>
             <button type="button" className={unit === "lb" ? "active" : ""} onClick={() => onChangeUnit("lb")}>lb</button>
           </div>
